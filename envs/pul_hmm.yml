@@ -1,0 +1,12 @@
+name: pul_hmm
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - hmmer
+  - prodigal
+  - mafft
+  - blast
+  - pandas
+  - biopython
