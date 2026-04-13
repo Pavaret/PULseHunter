@@ -1,6 +1,4 @@
-# PUL HMM pipeline (MMseqs-free, header-driven marker HMM version)
-
-This version removes the MMseqs2 clustering step that failed with `Illegal instruction` and replaces it with a reference-header-driven HMM builder.
+# PULseHunter
 
 ## Core idea
 
@@ -17,7 +15,6 @@ This version removes the MMseqs2 clustering step that failed with `Illegal instr
 
 ## Required software
 
-- python3
 - prodigal
 - mafft
 - hmmer (`hmmbuild`, `hmmpress`, `hmmsearch`; `hmmfetch` only if using `--pfam-hmm`)
@@ -28,13 +25,13 @@ This version removes the MMseqs2 clustering step that failed with `Illegal instr
 
 ```bash
 bash run_pul_hmm_pipeline.sh \
-  --genome /vol/projects/psivapor/PMIG_project/BioinfoHelper/PUL_BINE/PUL_db/GCF_014131755.1_ASM1413175v1_genomic.fna \
-  --pul-faa /vol/projects/psivapor/PMIG_project/BioinfoHelper/PUL_BINE/PUL_db/PUL_12112023.faa \
-  --pul-meta /path/to/dbCAN-PUL_Feb-2025.tsv \
-  --dbcan-hmm /path/to/dbCAN.hmm \
-  --pfam-hmm /path/to/Pfam-A.hmm \
+  --genome genomic.fna \
+  --pul-faa PUL_12112023.faa \
+  --pul-meta dbCAN-PUL_Feb-2025.tsv \
+  --dbcan-hmm dbCAN.hmm \
+  --pfam-hmm Pfam-A.hmm \
   --threads 24 \
-  --outdir GCF_014131755.1_PUL_HMM
+  --outdir genomic_result
 ```
 
 ## Output highlights
