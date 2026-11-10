@@ -124,20 +124,32 @@ def main():
 
     build_sh = outdir / "build_hmms.sh"
     with open(build_sh, "w") as fh:
-        fh.write("#!/usr/bin/env bash\nset -euo pipefail\n")
-        fh.write('BASE="$(cd "$(dirname "$0")" && pwd)"\n')
-        fh.write('mkdir -p "$BASE/alignments" "$BASE/hmms"\n')
-        fh.write('if [[ ! -s "$BASE/cluster_manifest.tsv" ]]; then echo "No cluster_manifest.tsv entries found" >&2; exit 1; fi\n')
-        fh.write('tail -n +2 "$BASE/cluster_manifest.tsv" | while IFS=$\'\\t\' read -r cluster_id n_members mode majority_class dominant_annotation dominant_pul pul_diversity members marker_class marker_group fasta; do\n')
-        fh.write('  [[ -z "$cluster_id" ]] && continue\n')
-        fh.write('  mafft --auto "$fasta" > "$BASE/alignments/${cluster_id}.aln.faa"\n')
-        fh.write('  hmmbuild -n "${marker_class}__${marker_group}" "$BASE/hmms/${cluster_id}.hmm" "$BASE/alignments/${cluster_id}.aln.faa" > "$BASE/hmms/${cluster_id}.hmmbuild.log"\n')
-        fh.write('done\n')
-        fh.write('shopt -s nullglob\n')
-        fh.write('hmms=("$BASE"/hmms/*.hmm)\n')
-        fh.write('(( ${#hmms[@]} > 0 )) || { echo "No HMM files produced" >&2; exit 1; }\n')
-        fh.write('cat "${hmms[@]}" > "$BASE/custom_pul_profiles.hmm"\n')
-        fh.write('hmmpress "$BASE/custom_pul_profiles.hmm" > "$BASE/hmmpress.log"\n')
+        fh.write("""#!/usr/bin/env bash
+# Align every marker group and build one HMM per group.
+# Paths are resolved relative to this script, so the directory can be moved.
+set -euo pipefail
+BASE="$(cd "$(dirname "$0")" && pwd)"
+THREADS="${THREADS:-4}"
+mkdir -p "$BASE/alignments" "$BASE/hmms"
+[[ -s "$BASE/cluster_manifest.tsv" ]] || { echo "No cluster_manifest.tsv entries found" >&2; exit 1; }
+build_one() {
+  local cluster_id="$1" name="$2"
+  mafft --auto --thread 2 --quiet "$BASE/cluster_fastas/${cluster_id}.faa" > "$BASE/alignments/${cluster_id}.aln.faa"
+  hmmbuild --cpu 2 -n "$name" "$BASE/hmms/${cluster_id}.hmm" "$BASE/alignments/${cluster_id}.aln.faa" > "$BASE/hmms/${cluster_id}.hmmbuild.log"
+}
+export -f build_one
+export BASE
+JOBS=$(( THREADS / 2 )); (( JOBS >= 1 )) || JOBS=1
+tail -n +2 "$BASE/cluster_manifest.tsv" \
+  | awk -F'\t' '$1 != "" {print $1 "\t" $9 "__" $10}' \
+  | xargs -P "$JOBS" -d '\n' -n 1 bash -c 'IFS=$'"'"'\t'"'"' read -r id name <<< "$0"; build_one "$id" "$name"'
+shopt -s nullglob
+hmms=("$BASE"/hmms/*.hmm)
+(( ${#hmms[@]} > 0 )) || { echo "No HMM files produced" >&2; exit 1; }
+cat "${hmms[@]}" > "$BASE/custom_pul_profiles.hmm"
+rm -f "$BASE"/custom_pul_profiles.hmm.h3?
+hmmpress "$BASE/custom_pul_profiles.hmm" > "$BASE/hmmpress.log"
+""")
     build_sh.chmod(0o755)
 
 

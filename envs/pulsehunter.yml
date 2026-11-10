@@ -1,4 +1,4 @@
-name: pul_hmm
+name: pulsehunter
 channels:
   - conda-forge
   - bioconda
@@ -10,3 +10,5 @@ dependencies:
   - blast
   - pandas
   - biopython
+  - matplotlib-base
+  - primer3-py

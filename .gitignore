@@ -1,0 +1,13 @@
+# Claude Code
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Results
+results/
+*.log
